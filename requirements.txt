@@ -9,3 +9,9 @@ pytest
 black
 flake8
 isort
+streamlit
+pandas
+seaborn
+matplotlib
+scipy
+numpy

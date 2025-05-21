@@ -4,12 +4,25 @@ import streamlit as st
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# Define the correct mapping for filenames
+COUNTRY_FILENAME_MAP = {
+    "Benin": "benin_clean.csv",
+    "Sierra Leone": "sierraleone-bumbuna_clean.csv", # Corrected filename
+    "Togo": "togo-dapaong_qc_clean.csv"              # Corrected filename
+}
+
 # Cache data loading to improve performance
 @st.cache_data # Use st.cache_data for dataframes
 def load_country_data(country_name):
-    """Loads cleaned data for a single country."""
+    """Loads cleaned data for a single country using the mapped filename."""
+    if country_name not in COUNTRY_FILENAME_MAP:
+        st.error(f"Error: Filename mapping not found for {country_name}.")
+        return pd.DataFrame()
+
+    specific_filename = COUNTRY_FILENAME_MAP[country_name]
+    file_path = f"data/{specific_filename}" # Use the mapped filename directly
+    
     try:
-        file_path = f"data/{country_name.lower().replace(' ', '')}_clean.csv"
         df = pd.read_csv(file_path)
         if 'Timestamp' in df.columns:
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
@@ -19,14 +32,14 @@ def load_country_data(country_name):
         st.error(f"Error: Cleaned data file for {country_name} not found at {file_path}.")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error loading data for {country_name}: {e}")
+        st.error(f"Error loading data for {country_name} from {file_path}: {e}")
         return pd.DataFrame()
 
 def get_combined_data(selected_countries_list):
     """Combines data for selected countries."""
     all_dfs = []
     for country in selected_countries_list:
-        df = load_country_data(country)
+        df = load_country_data(country) # This will now use the mapped filename
         if not df.empty:
             all_dfs.append(df)
     
@@ -34,6 +47,8 @@ def get_combined_data(selected_countries_list):
         return pd.DataFrame()
         
     return pd.concat(all_dfs, ignore_index=True)
+
+# ... (rest of the functions in utils.py: create_boxplot, create_summary_table, create_ranking_chart remain the same) ...
 
 def create_boxplot(df, metric, title):
     """Creates a boxplot for a given metric, colored by country."""

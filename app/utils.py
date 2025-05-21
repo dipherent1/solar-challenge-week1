@@ -12,7 +12,18 @@ COUNTRY_FILENAME_MAP = {
 }
 
 # Cache data loading to improve performance
-@st.cache_data # Use st.cache_data for dataframes
+@import pandas as pd
+import streamlit as st
+import os # Import os
+
+# ... (COUNTRY_FILENAME_MAP should be here) ...
+COUNTRY_FILENAME_MAP = {
+    "Benin": "benin_clean.csv",
+    "Sierra Leone": "sierraleone-bumbuna_clean.csv",
+    "Togo": "togo-dapaong_qc_clean.csv"
+}
+
+@st.cache_data
 def load_country_data(country_name):
     """Loads cleaned data for a single country using the mapped filename."""
     if country_name not in COUNTRY_FILENAME_MAP:
@@ -20,21 +31,30 @@ def load_country_data(country_name):
         return pd.DataFrame()
 
     specific_filename = COUNTRY_FILENAME_MAP[country_name]
-    file_path = f"data/{specific_filename}" # Use the mapped filename directly
+    file_path = f"data/{specific_filename}"
+    
+    # --- DEBUGGING PRINTS ---
+    absolute_path = os.path.abspath(file_path)
+    st.info(f"Attempting to load: {country_name}")
+    st.info(f"Relative path constructed: {file_path}")
+    st.info(f"Absolute path resolved: {absolute_path}")
+    st.info(f"Does file exist at absolute path? {os.path.exists(absolute_path)}")
+    # --- END DEBUGGING PRINTS ---
     
     try:
         df = pd.read_csv(file_path)
         if 'Timestamp' in df.columns:
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-        df['Country'] = country_name # Add country column for combining later
+        df['Country'] = country_name
         return df
     except FileNotFoundError:
-        st.error(f"Error: Cleaned data file for {country_name} not found at {file_path}.")
+        st.error(f"Error (FileNotFoundError): Cleaned data file for {country_name} not found at relative path '{file_path}' (resolved to absolute: '{absolute_path}').")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error loading data for {country_name} from {file_path}: {e}")
+        st.error(f"Error loading data for {country_name} from '{file_path}': {e}")
         return pd.DataFrame()
-
+    
+    
 def get_combined_data(selected_countries_list):
     """Combines data for selected countries."""
     all_dfs = []
